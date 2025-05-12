@@ -1,6 +1,6 @@
 {-# OPTIONS_HADDOCK hide #-}
 module SMCDEL.Internal.Token where
-
+-- Information what sort of token & Where am I
 data Token a -- == AlexPn
   = TokenVARS              {apn :: a}
   | TokenLAW               {apn :: a}
@@ -8,6 +8,7 @@ data Token a -- == AlexPn
   | TokenTRUEQ             {apn :: a}
   | TokenVALIDQ            {apn :: a}
   | TokenWHEREQ            {apn :: a}
+  | TokenUPDATEQ           {apn :: a}
   | TokenColon             {apn :: a}
   | TokenComma             {apn :: a}
   | TokenStr {fooS::String, apn :: a}
@@ -46,3 +47,4 @@ data Token a -- == AlexPn
   | TokenInfixDKnowThat    {apn :: a}
   | TokenG                 {apn :: a}
   deriving (Eq,Show)
+

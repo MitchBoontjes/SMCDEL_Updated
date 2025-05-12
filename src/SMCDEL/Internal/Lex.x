@@ -22,6 +22,7 @@ tokens :-
   "TRUE?"               { \ p _ -> TokenTRUEQ             p }
   "VALID?"              { \ p _ -> TokenVALIDQ            p }
   "WHERE?"              { \ p _ -> TokenWHEREQ            p }
+  "UPDATE!"             { \ p _ -> TokenUPDATEQ           p }
   ":"                   { \ p _ -> TokenColon             p }
   ","                   { \ p _ -> TokenComma             p }
   "("                   { \ p _ -> TokenOB                p }
