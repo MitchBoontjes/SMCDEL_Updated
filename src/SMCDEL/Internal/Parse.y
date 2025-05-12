@@ -24,6 +24,7 @@ import SMCDEL.Language
   TRUEQ  { TokenTRUEQ  _ }
   VALIDQ { TokenVALIDQ _ }
   WHEREQ { TokenWHEREQ _ }
+  UPDATEQ { TokenUPDATEQ  _ }
   COLON  { TokenColon  _ }
   COMMA  { TokenComma  _ }
   TOP    { TokenTop    _ }
@@ -120,10 +121,11 @@ State : '{' '}' { [] }
 Job : TRUEQ State Form { TrueQ $2 $3 }
     | VALIDQ Form { ValidQ $2 }
     | WHEREQ Form { WhereQ $2 }
+    | UPDATEQ Form { UpdateQ $2 }
 
 {
 data CheckInput = CheckInput [Int] Form [(String,[Int])] JobList deriving (Show,Eq,Ord)
-data Job = TrueQ IntList Form | ValidQ Form | WhereQ Form deriving (Show,Eq,Ord)
+data Job = TrueQ IntList Form | ValidQ Form | WhereQ Form | UpdateQ Form  deriving (Show,Eq,Ord)
 type JobList = [Job]
 type IntList = [Int]
 type FormList = [Form]
@@ -169,7 +171,7 @@ sanityCheck (CheckInput vocabInts lawform obsSpec jobs) =
   let
     agents = map fst obsSpec
     vocab = map P vocabInts
-    jobForms = [ f | (TrueQ _ f) <- jobs ] ++ [ f | (ValidQ f) <- jobs ] ++ [ f | (WhereQ f) <- jobs ]
+    jobForms = [ f | (TrueQ _ f) <- jobs ] ++ [ f | (ValidQ f) <- jobs ] ++ [ f | (WhereQ f) <- jobs ] ++ [f | (UpdateQ f) <- jobs]  -- ADDED UPDATEQ
     jobAtoms = concat [ ps | (TrueQ ps _) <- jobs ]
   in
     [ "OBS contains atoms not in VARS!" | not (all (all (`elem` vocabInts) . snd) obsSpec) ]
