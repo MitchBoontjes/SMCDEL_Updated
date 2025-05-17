@@ -20,6 +20,7 @@ import qualified Data.Text as T
 import qualified Data.Text.Encoding as E
 import qualified Data.Text.Lazy as TL
 -- import Data.HasCacBDD.Visuals (svgGraph)
+import SMCDEL.Other.Visuals (svgGraphMac)
 import qualified Language.Javascript.JQuery as JQuery
 import Language.Haskell.TH.Syntax ( runIO )
 import Network.Wai.Handler.Warp (defaultSettings, setHost, setPort)
@@ -181,14 +182,14 @@ doJobWeb mykns (UpdateQ f) = (unlines
 -- 10. SHOWING THE STRUCTURE
 showStructure :: KnowStruct -> IO String
 showStructure (KnS props lawbdd obs) = do
---  svgString <- svgGraph lawbdd
+  svgString <- svgGraphMac lawbdd
   return $ "$$ \\mathcal{F} = \\left( \n"
     ++ tex props ++ ", "
     ++ " \\begin{array}{l} {"++ " \\href{javascript:toggleLaw()}{\\theta} " ++"} \\end{array}\n "
     ++ ", \\begin{array}{l}\n"
     ++ intercalate " \\\\\n " (map (\(i,os) -> "O_{"++i++"}=" ++ tex os) obs)
     ++ "\\end{array}\n"
-    ++ " \\right) $$ \n <div class='lawbdd' style='display:none;'> where \\(\\theta\\) is this BDD:<br /><p align='center'>" ++ "</p></div>" -- ++ svgString
+    ++ " \\right) $$ \n <div class='lawbdd' style='display:none;'> where \\(\\theta\\) is this BDD:<br /><p align='center'>" ++ svgString ++ "</p></div>"
 
 -- 11. EMBEDDED FILES
 embeddedFile :: String -> T.Text
