@@ -68,3 +68,4 @@ svgGraphMac b = do
   case exitCode of
     ExitSuccess -> return $ (unlines.tail.lines) out
     ExitFailure n -> error $ "dot -Tsvg failed with exit code " ++ show n ++ " and error: " ++ err
+    

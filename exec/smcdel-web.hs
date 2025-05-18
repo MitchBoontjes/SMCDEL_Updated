@@ -228,3 +228,4 @@ webError kind mpos msgs = html $ TL.pack $ concat
         ]
       Nothing -> ""
   ]
+
