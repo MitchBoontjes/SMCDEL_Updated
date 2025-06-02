@@ -34,9 +34,6 @@ import SMCDEL.Internal.TexDisplay
 import SMCDEL.Translations.S5
 import SMCDEL.Language
 
--- needed to show structure in update job
-import System.IO.Unsafe (unsafePerformIO)
-import SMCDEL.Language (simplify)
 
 
 -- 3. main: Startup & Server Options
@@ -145,28 +142,28 @@ myCatch action kns = Control.Exception.catch
 doJobsWebSafe :: KnowStruct -> [Job] -> IO String
 doJobsWebSafe _     [] = return ""
 doJobsWebSafe mykns (j:js) = do
-  (result, updatedKns) <- myCatch (return (doJobWeb mykns j)) mykns -- 2nd kns as a fallback
+  (result, updatedKns) <- myCatch (doJobWeb mykns j) mykns -- 2nd kns as a fallback
   rest <- doJobsWebSafe updatedKns js
   return $ "<p>" ++ result ++ "</p>\n" ++ rest
 
 
 -- Also add the (new) kns when returning
 -- lowercase = variable, uppercase = fixed type
-doJobWeb :: KnowStruct -> Job -> (String, KnowStruct)
-doJobWeb mykns (TrueQ s f) = (unlines
+doJobWeb :: KnowStruct -> Job -> IO (String, KnowStruct)
+doJobWeb mykns (TrueQ s f) = return (unlines
   [ "\\( (\\mathcal{F}, " ++ sStr ++ " ) "
   , if evalViaBdd (mykns, map P s) f then "\\vDash" else "\\not\\vDash"
   , (texForm . simplify) f
   , "\\)" ], mykns) 
   where sStr = " \\{ " ++ intercalate "," (map (\i -> "p_{" ++ show i ++ "}") s) ++ " \\}"
 
-doJobWeb mykns (ValidQ f) = (unlines
+doJobWeb mykns (ValidQ f) = return (unlines
   [ "\\( \\mathcal{F} "
   , if validViaBdd mykns f then "\\vDash" else "\\not\\vDash"
   , (texForm . simplify) f
   , "\\)" ], mykns)
 
-doJobWeb mykns (WhereQ f) = (unlines
+doJobWeb mykns (WhereQ f) = return (unlines
   [ "At which states is \\("
   , (texForm . simplify) f
   , "\\) true?<br /> \\("
@@ -174,20 +171,17 @@ doJobWeb mykns (WhereQ f) = (unlines
   , "\\)" ], mykns)
 
 -- update :: KnowStruct -> Form -> KnowStruct
-doJobWeb mykns (UpdateQ f) = 
-  let
-    updatedKns = update mykns f
-    phiTex = texForm (simplify f)
-    fPhi = "\\( \\mathcal{F}^{(" ++ phiTex ++ ")} \\)"
-    -- turn IO string into String
-    updatedStruct = unsafePerformIO (showStructure updatedKns)
-  in 
-    (unlines
+doJobWeb mykns (UpdateQ f) = do
+  let updatedKns = update mykns f
+  let phiTex = texForm (simplify f)
+  let fPhi = "\\( \\mathcal{F}^{(" ++ phiTex ++ ")} \\)"
+  updatedStruct <- showStructure updatedKns
+  return (unlines
       ["After updating the model with the new announcement \\(" ++ phiTex ++ "\\),"
       , "the resulting structure is: " ++ fPhi ++ "<br />"
       , updatedStruct
       , "<p> Updated formula:</p> \\(" ++ phiTex ++ "\\)"
-      ], updatedKns  )
+      ], updatedKns)
 
 
 -- Should not only return a string, but also the new Kns
