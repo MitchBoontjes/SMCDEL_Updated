@@ -278,6 +278,8 @@ instance Update KnowStruct Form where
   checks = [ ] -- unpointed structures can be updated with anything
   unsafeUpdate kns@(KnS props lawbdd obs) psi =
     KnS props (lawbdd `con` bddOf kns psi) obs
+    -- Previous lawbdd conjunction with new formula
+    -- bddOf : boolean formula equivalent to the formula
 
 instance Update KnowScene Form where
   unsafeUpdate (kns,s) psi = (unsafeUpdate kns psi,s)
