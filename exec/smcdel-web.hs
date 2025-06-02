@@ -19,8 +19,8 @@ import Web.Scotty
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as E
 import qualified Data.Text.Lazy as TL
--- import Data.HasCacBDD.Visuals (svgGraph)
-import SMCDEL.Other.Visuals (svgGraphMac)
+import Data.HasCacBDD.Visuals (svgGraphMac)
+-- import SMCDEL.Other.Visuals (svgGraphMac)
 import qualified Language.Javascript.JQuery as JQuery
 import Language.Haskell.TH.Syntax ( runIO )
 import Network.Wai.Handler.Warp (defaultSettings, setHost, setPort)
@@ -33,6 +33,11 @@ import SMCDEL.Symbolic.S5
 import SMCDEL.Internal.TexDisplay
 import SMCDEL.Translations.S5
 import SMCDEL.Language
+
+-- needed to show structure in update job
+import System.IO.Unsafe (unsafePerformIO)
+import SMCDEL.Language (simplify)
+
 
 -- 3. main: Startup & Server Options
 main :: IO ()
@@ -169,13 +174,21 @@ doJobWeb mykns (WhereQ f) = (unlines
   , "\\)" ], mykns)
 
 -- update :: KnowStruct -> Form -> KnowStruct
-doJobWeb mykns (UpdateQ f) = (unlines
-  [ "Updated model: TODO<br />"
-  -- , showStructure updatedKns
-  , "<p>Updated formula:</p> \\("
-  , (texForm . simplify) f
-  , "\\)" ], updatedKns)
-  where updatedKns = update mykns f
+doJobWeb mykns (UpdateQ f) = 
+  let
+    updatedKns = update mykns f
+    phiTex = texForm (simplify f)
+    fPhi = "\\( \\mathcal{F}^{(" ++ phiTex ++ ")} \\)"
+    -- turn IO string into String
+    updatedStruct = unsafePerformIO (showStructure updatedKns)
+  in 
+    (unlines
+      ["After updating the model with the new announcement \\(" ++ phiTex ++ "\\),"
+      , "the resulting structure is: " ++ fPhi ++ "<br />"
+      , updatedStruct
+      , "<p> Updated formula:</p> \\(" ++ phiTex ++ "\\)"
+      ], updatedKns  )
+
 
 -- Should not only return a string, but also the new Kns
 
@@ -228,4 +241,3 @@ webError kind mpos msgs = html $ TL.pack $ concat
         ]
       Nothing -> ""
   ]
-
