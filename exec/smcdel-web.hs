@@ -19,13 +19,16 @@ import Web.Scotty
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as E
 import qualified Data.Text.Lazy as TL
-import Data.HasCacBDD.Visuals (svgGraphMac)
+import Data.HasCacBDD.Visuals (svgGraphWithPaths) -- replace with svgGraphWithPaths
 -- import SMCDEL.Other.Visuals (svgGraphMac)
 import qualified Language.Javascript.JQuery as JQuery
 import Language.Haskell.TH.Syntax ( runIO )
 import Network.Wai.Handler.Warp (defaultSettings, setHost, setPort)
 import System.Environment (lookupEnv)
 import Text.Read (readMaybe)
+
+-- Counter for unique IDs
+import Data.IORef
 
 import SMCDEL.Internal.Lex
 import SMCDEL.Internal.Parse
@@ -39,6 +42,8 @@ import SMCDEL.Language
 -- 3. main: Startup & Server Options
 main :: IO ()
 main = do
+  counter <- uniqueIDCounterInitializer -- Initialize the counter
+
   putStrLn $ "SMCDEL " ++ showVersion version ++ " -- https://github.com/jrclogic/SMCDEL"
   port <- fromMaybe 3000 . (readMaybe =<<) <$> lookupEnv "PORT"
   putStrLn $ "Please open this link: http://127.0.0.1:" ++ show port ++ "/index.html"
@@ -80,7 +85,9 @@ main = do
             [] -> do
               -- Knowledge structure
               let mykns = KnS (map P vocabInts) (boolBddOf lawform) (map (second (map P)) obs)
-              knstring <- liftIO $ showStructure mykns
+              -- counter <- liftIO uniqueIDCounterInitializer -- Initialize the counter
+              uniqueID <- liftIO $ getUniqueID counter     -- Generate a unique ID
+              knstring <- liftIO $ showStructure uniqueID mykns -- Show the structure
               results <- liftIO $ doJobsWebSafe mykns jobs
               html $ mconcat
                 [ TL.pack knstring
@@ -108,7 +115,9 @@ main = do
               -- Knowledge structure
               unless (null (sanityCheck ci)) (webError Sanity Nothing (sanityCheck ci))
               let mykns = KnS (map P vocabInts) (boolBddOf lawform) (map (second (map P)) obs)
-              _ <- liftIO $ showStructure mykns -- this moves parse errors to scotty
+              -- counter <- liftIO uniqueIDCounterInitializer -- Initialize the counter
+              uniqueID2 <- liftIO $ getUniqueID counter     -- Generate a unique ID
+              _ <- liftIO $ showStructure uniqueID2 mykns -- this moves parse errors to scotty
 
               -- 7.3 Kripke structure
               if numberOfStates mykns > 32
@@ -142,28 +151,29 @@ myCatch action kns = Control.Exception.catch
 doJobsWebSafe :: KnowStruct -> [Job] -> IO String
 doJobsWebSafe _     [] = return ""
 doJobsWebSafe mykns (j:js) = do
-  (result, updatedKns) <- myCatch (doJobWeb mykns j) mykns -- 2nd kns as a fallback
+  counter <- liftIO uniqueIDCounterInitializer -- Initialize the counter
+  (result, updatedKns) <- myCatch (doJobWeb counter mykns j) mykns -- 2nd kns as a fallback
   rest <- doJobsWebSafe updatedKns js
   return $ "<p>" ++ result ++ "</p>\n" ++ rest
 
 
 -- Also add the (new) kns when returning
 -- lowercase = variable, uppercase = fixed type
-doJobWeb :: KnowStruct -> Job -> IO (String, KnowStruct)
-doJobWeb mykns (TrueQ s f) = return (unlines
+doJobWeb :: IORef Int -> KnowStruct -> Job -> IO (String, KnowStruct)
+doJobWeb _ mykns (TrueQ s f) = return (unlines
   [ "\\( (\\mathcal{F}, " ++ sStr ++ " ) "
   , if evalViaBdd (mykns, map P s) f then "\\vDash" else "\\not\\vDash"
   , (texForm . simplify) f
   , "\\)" ], mykns) 
   where sStr = " \\{ " ++ intercalate "," (map (\i -> "p_{" ++ show i ++ "}") s) ++ " \\}"
 
-doJobWeb mykns (ValidQ f) = return (unlines
+doJobWeb _ mykns (ValidQ f) = return (unlines
   [ "\\( \\mathcal{F} "
   , if validViaBdd mykns f then "\\vDash" else "\\not\\vDash"
   , (texForm . simplify) f
   , "\\)" ], mykns)
 
-doJobWeb mykns (WhereQ f) = return (unlines
+doJobWeb _ mykns (WhereQ f) = return (unlines
   [ "At which states is \\("
   , (texForm . simplify) f
   , "\\) true?<br /> \\("
@@ -171,11 +181,12 @@ doJobWeb mykns (WhereQ f) = return (unlines
   , "\\)" ], mykns)
 
 -- update :: KnowStruct -> Form -> KnowStruct
-doJobWeb mykns (UpdateQ f) = do
+doJobWeb counter mykns (UpdateQ f) = do
   let updatedKns = update mykns f
   let phiTex = texForm (simplify f)
   let fPhi = "\\( \\mathcal{F}^{(" ++ phiTex ++ ")} \\)"
-  updatedStruct <- showStructure updatedKns
+  uniqueID <- getUniqueID counter 
+  updatedStruct <- showStructure uniqueID updatedKns
   return (unlines
       ["After updating the model with the new announcement \\(" ++ phiTex ++ "\\),"
       , "the resulting structure is: " ++ fPhi ++ "<br />"
@@ -187,16 +198,43 @@ doJobWeb mykns (UpdateQ f) = do
 -- Should not only return a string, but also the new Kns
 
 -- 10. SHOWING THE STRUCTURE
-showStructure :: KnowStruct -> IO String
-showStructure (KnS props lawbdd obs) = do
-  svgString <- svgGraphMac lawbdd
-  return $ "$$ \\mathcal{F} = \\left( \n"
-    ++ tex props ++ ", "
-    ++ " \\begin{array}{l} {"++ " \\href{javascript:toggleLaw()}{\\theta} " ++"} \\end{array}\n "
-    ++ ", \\begin{array}{l}\n"
-    ++ intercalate " \\\\\n " (map (\(i,os) -> "O_{"++i++"}=" ++ tex os) obs)
-    ++ "\\end{array}\n"
-    ++ " \\right) $$ \n <div class='lawbdd' style='display:none;'> where \\(\\theta\\) is this BDD:<br /><p align='center'>" ++ svgString ++ "</p></div>"
+
+-- showStructure :: KnowStruct -> IO String
+-- showStructure (KnS props lawbdd obs) = do
+--   svgString <- svgGraphMac lawbdd
+--   return $ "$$ \\mathcal{F} = \\left( \n"
+--     ++ tex props ++ ", "
+--     ++ " \\begin{array}{l} {"++ " \\href{javascript:toggleLaw()}{\\theta} " ++"} \\end{array}\n "
+--     ++ ", \\begin{array}{l}\n"
+--     ++ intercalate " \\\\\n " (map (\(i,os) -> "O_{"++i++"}=" ++ tex os) obs)
+--     ++ "\\end{array}\n"
+--     ++ " \\right) $$ \n <div class='lawbdd' style='display:none;'> where \\(\\theta\\) is this BDD:<br /><p align='center'>" ++ svgString ++ "</p></div>"
+
+-- Initialize a counter for unique IDs
+uniqueIDCounterInitializer :: IO (IORef Int)
+uniqueIDCounterInitializer = newIORef 0
+
+-- Increment the unique ID counter
+getUniqueID :: IORef Int -> IO Int
+getUniqueID counterRef = do
+  uniqueId <- readIORef counterRef
+  writeIORef counterRef (uniqueId + 1)
+  return uniqueId
+
+-- Updated showStructure function
+showStructure :: Int -> KnowStruct -> IO String
+showStructure uniqueID (KnS props lawbdd obs) = do
+  s <- svgGraphWithPaths lawbdd -- replace with: svgGraphWithPaths paths lawbdd
+  case s of
+    Nothing -> error $ "Error generating SVG " 
+    Just svgString -> do
+      return $ "$$ \\mathcal{F} = \\left( \n"
+        ++ tex props ++ ", "
+        ++ " \\begin{array}{l} {"++ " \\href{javascript:toggleLaw(" ++ show uniqueID ++ ")}{\\theta} " ++"} \\end{array}\n "
+        ++ ", \\begin{array}{l}\n"
+        ++ intercalate " \\\\\n " (map (\(i,os) -> "O_{"++i++"}=" ++ tex os) obs)
+        ++ "\\end{array}\n"
+        ++ " \\right) $$ \n <div class='lawbdd' id='lawbdd" ++ show uniqueID ++ "' style='display:none;'> where \\(\\theta\\) is this BDD:<br /><p align='center'>" ++ svgString ++ "</p></div>"
 
 -- 11. EMBEDDED FILES
 embeddedFile :: String -> T.Text

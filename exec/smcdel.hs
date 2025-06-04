@@ -64,6 +64,7 @@ doJob outHandle False mykns (WhereQ f) = do
   hPutStrLn outHandle $ "At which states is " ++ ppForm f ++ " true?"
   mapM_ (vividPutStrLn.show.map(\(P n) -> n)) (whereViaBdd mykns f)
   putStr "\n"
+-- doJob update
 
 getInputAndSettings :: IO (String,[String])
 getInputAndSettings = do

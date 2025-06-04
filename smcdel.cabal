@@ -55,6 +55,14 @@ flag with-cudd
 
 library
   exposed-modules:
+      SMCDEL.Internal.Lex
+      SMCDEL.Internal.Parse
+      SMCDEL.Internal.TexDisplay
+      SMCDEL.Language
+      SMCDEL.Symbolic.S5
+      SMCDEL.Translations.S5
+      SMCDEL.Other.Visuals
+  other-modules:
       SMCDEL.Examples
       SMCDEL.Examples.Cheryl
       SMCDEL.Examples.CherylDemo
@@ -79,23 +87,16 @@ library
       SMCDEL.Explicit.K
       SMCDEL.Explicit.S5
       SMCDEL.Internal.Help
-      SMCDEL.Internal.Lex
-      SMCDEL.Internal.Parse
       SMCDEL.Internal.TaggedBDD
-      SMCDEL.Internal.TexDisplay
       SMCDEL.Internal.Token
-      SMCDEL.Language
       SMCDEL.Other.BDD2Form
       SMCDEL.Other.MCTRIANGLE
       SMCDEL.Other.Planning
       SMCDEL.Symbolic.K
       SMCDEL.Symbolic.Ki
-      SMCDEL.Symbolic.S5
       SMCDEL.Symbolic.S5_DD
       SMCDEL.Translations.Convert
       SMCDEL.Translations.K
-      SMCDEL.Translations.S5
-  other-modules:
       Paths_smcdel
   hs-source-dirs:
       src
@@ -119,6 +120,7 @@ library
     , temporary ==1.3.*
     , text >=2.0.2 && <2.1
     , time >=1.12.2 && <1.13
+    , unix
   default-language: Haskell2010
   if flag(with-cudd)
     exposed-modules:
@@ -163,21 +165,18 @@ executable smcdel-web
   build-tools:
       alex
     , happy
+  build-depends:
+      HasCacBDD >=0.3.0.0 && <0.4
+    , base >=4.8 && <5
+    , deepseq
+    , file-embed
+    , js-jquery >=3
+    , scotty >=0.11.0 && <0.20
+    , smcdel
+    , template-haskell
+    , text
+    , warp
   default-language: Haskell2010
-  if flag(web)
-    build-depends:
-        HasCacBDD >=0.3.0.0 && <0.4
-      , base >=4.8 && <5
-      , deepseq
-      , file-embed
-      , js-jquery >=3
-      , scotty >=0.11.0 && <0.20
-      , smcdel
-      , template-haskell
-      , text
-      , warp
-  else
-    buildable: False
 
 test-suite CUDD
   type: exitcode-stdio-1.0

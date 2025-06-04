@@ -63,6 +63,15 @@ library:
     - template-haskell
     - text >= 2.0.2 && < 2.1
     - time >= 1.12.2 && < 1.13
+    - unix
+  exposed-modules:
+    - SMCDEL.Internal.Lex
+    - SMCDEL.Internal.Parse
+    - SMCDEL.Internal.TexDisplay
+    - SMCDEL.Language
+    - SMCDEL.Symbolic.S5
+    - SMCDEL.Translations.S5
+    - SMCDEL.Other.Visuals
   when:
   - condition: flag(with-cudd)
     dependencies:
@@ -97,22 +106,17 @@ executables:
     source-dirs: exec
     main: smcdel-web.hs
     ghc-options: -threaded
-    when:
-    - condition: flag(web)
-      then:
-        dependencies:
-          - base >= 4.8 && < 5
-          - deepseq
-          - file-embed
-          - scotty >= 0.11.0 && < 0.20
-          - HasCacBDD >= 0.3.0.0 && < 0.4
-          - js-jquery >= 3
-          - smcdel
-          - template-haskell
-          - text
-          - warp
-      else:
-        buildable: false
+    dependencies:
+      - base >= 4.8 && < 5
+      - deepseq
+      - file-embed
+      - scotty >= 0.11.0 && < 0.20
+      - HasCacBDD >= 0.3.0.0 && < 0.4
+      - js-jquery >= 3
+      - smcdel
+      - template-haskell
+      - text
+      - warp
 
 tests:
   examples:

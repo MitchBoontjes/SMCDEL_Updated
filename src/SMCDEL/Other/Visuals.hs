@@ -5,6 +5,7 @@ module SMCDEL.Other.Visuals (
   svgGraphMac
 ) where
 
+import System.Posix.Files (fileExist)
 import Data.Maybe (fromJust)
 import System.Exit
 import System.IO
@@ -51,6 +52,7 @@ genGraphWith myShow myb
 
 -- | (my) macbook version
 
+
 -- | Display the graph of a BDD with dot.
 showGraphMac :: Bdd -> IO ()
 showGraphMac b = do
@@ -68,4 +70,3 @@ svgGraphMac b = do
   case exitCode of
     ExitSuccess -> return $ (unlines.tail.lines) out
     ExitFailure n -> error $ "dot -Tsvg failed with exit code " ++ show n ++ " and error: " ++ err
-    
