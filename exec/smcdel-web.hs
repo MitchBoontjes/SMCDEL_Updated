@@ -42,7 +42,7 @@ import SMCDEL.Language
 -- 3. main: Startup & Server Options
 main :: IO ()
 main = do
-  counter <- uniqueIDCounterInitializer -- Initialize the counter
+  -- counter <- uniqueIDCounterInitializer -- Initialize the counter
 
   putStrLn $ "SMCDEL " ++ showVersion version ++ " -- https://github.com/jrclogic/SMCDEL"
   port <- fromMaybe 3000 . (readMaybe =<<) <$> lookupEnv "PORT"
@@ -72,12 +72,12 @@ main = do
       -- 6.1 Lexing
       case alexScanTokensSafe smcinput of
         Left pos -> webError Lex (Just pos) []
-        Right lexResult -> 
-    
+        Right lexResult ->
+
           -- 6.2 Parsing
           case parse lexResult of
           Left pos -> webError Parse (Just pos) []
-          Right ci@(CheckInput vocabInts lawform obs jobs) -> 
+          Right ci@(CheckInput vocabInts lawform obs jobs) ->
             -- Sanity check
             case sanityCheck ci of
             msgs@(_:_) -> do
@@ -85,7 +85,7 @@ main = do
             [] -> do
               -- Knowledge structure
               let mykns = KnS (map P vocabInts) (boolBddOf lawform) (map (second (map P)) obs)
-              -- counter <- liftIO uniqueIDCounterInitializer -- Initialize the counter
+              counter <- liftIO uniqueIDCounterInitializer -- Initialize the counter
               uniqueID <- liftIO $ getUniqueID counter     -- Generate a unique ID
               knstring <- liftIO $ showStructure uniqueID mykns -- Show the structure
               results <- liftIO $ doJobsWebSafe mykns jobs
@@ -101,13 +101,13 @@ main = do
       -- 7.1 Lexing
       case alexScanTokensSafe smcinput of
         Left pos -> webError Lex (Just pos) []
-        Right lexResult -> 
-          
+        Right lexResult ->
+
           -- 7.2 Parsing
           case parse lexResult of
           Left pos -> webError Parse (Just pos) []
-          Right ci@(CheckInput vocabInts lawform obs _) -> 
-            
+          Right ci@(CheckInput vocabInts lawform obs _) ->
+
             -- Sanity check
             case sanityCheck ci of
             msgs@(_:_) -> webError Sanity Nothing msgs
@@ -115,7 +115,7 @@ main = do
               -- Knowledge structure
               unless (null (sanityCheck ci)) (webError Sanity Nothing (sanityCheck ci))
               let mykns = KnS (map P vocabInts) (boolBddOf lawform) (map (second (map P)) obs)
-              -- counter <- liftIO uniqueIDCounterInitializer -- Initialize the counter
+              counter <- liftIO uniqueIDCounterInitializer -- Initialize the counter
               uniqueID2 <- liftIO $ getUniqueID counter     -- Generate a unique ID
               _ <- liftIO $ showStructure uniqueID2 mykns -- this moves parse errors to scotty
 
@@ -164,7 +164,7 @@ doJobWeb _ mykns (TrueQ s f) = return (unlines
   [ "\\( (\\mathcal{F}, " ++ sStr ++ " ) "
   , if evalViaBdd (mykns, map P s) f then "\\vDash" else "\\not\\vDash"
   , (texForm . simplify) f
-  , "\\)" ], mykns) 
+  , "\\)" ], mykns)
   where sStr = " \\{ " ++ intercalate "," (map (\i -> "p_{" ++ show i ++ "}") s) ++ " \\}"
 
 doJobWeb _ mykns (ValidQ f) = return (unlines
@@ -185,7 +185,7 @@ doJobWeb counter mykns (UpdateQ f) = do
   let updatedKns = update mykns f
   let phiTex = texForm (simplify f)
   let fPhi = "\\( \\mathcal{F}^{(" ++ phiTex ++ ")} \\)"
-  uniqueID <- getUniqueID counter 
+  uniqueID <- getUniqueID counter
   updatedStruct <- showStructure uniqueID updatedKns
   return (unlines
       ["After updating the model with the new announcement \\(" ++ phiTex ++ "\\),"
@@ -226,11 +226,11 @@ showStructure :: Int -> KnowStruct -> IO String
 showStructure uniqueID (KnS props lawbdd obs) = do
   s <- svgGraphWithPaths lawbdd -- replace with: svgGraphWithPaths paths lawbdd
   case s of
-    Nothing -> error $ "Error generating SVG " 
+    Nothing -> error $ "Error generating SVG "
     Just svgString -> do
       return $ "$$ \\mathcal{F} = \\left( \n"
         ++ tex props ++ ", "
-        ++ " \\begin{array}{l} {"++ " \\href{javascript:toggleLaw(" ++ show uniqueID ++ ")}{\\theta} " ++"} \\end{array}\n "
+        ++ " \\begin{array}{l} {"++ " \\href{javascript:toggleLaw(this, event)}{\\theta} " ++"} \\end{array}\n "
         ++ ", \\begin{array}{l}\n"
         ++ intercalate " \\\\\n " (map (\(i,os) -> "O_{"++i++"}=" ++ tex os) obs)
         ++ "\\end{array}\n"

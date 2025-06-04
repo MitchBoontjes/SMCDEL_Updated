@@ -135,9 +135,12 @@ input[type=button], input[type=submit] {
         }
     });
   }
-  function toggleLaw(uniqueID) {
-  var bdd = document.getElementById('lawbdd' + uniqueID);
-  bdd.style.display = (bdd.style.display === 'none') ? 'block' : 'none';
+  function toggleLaw(element, event) {
+    console.log(element);
+    console.log(event);
+    var bdd = jQuery(element).parent().parent().parent().parent().parent().parent().parent().parent().parent().children(".lawbdd");
+    console.log(bdd);
+    bdd.style.display = (bdd.style.display === 'none') ? 'block' : 'none';
 }
   $(document).keydown(function(e) {
     if(e.ctrlKey && e.key == "s") {
