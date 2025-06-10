@@ -36,3 +36,6 @@ VALID?
       & (~ (bob   knows whether 2))
       & (~ (carol knows whether 3)) ) ]
   (1 & 2 & 3)
+
+UPDATE!
+  (1|2|3)
