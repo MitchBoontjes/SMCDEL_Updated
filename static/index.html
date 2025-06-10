@@ -127,7 +127,9 @@ input[type=button], input[type=submit] {
       success:
         function(data,textStatus,jqXHR) {
           $('#output').html(data);
-          MathJax.typesetPromise();
+          MathJax.typesetPromise().then(() =>
+            jQuery("#output mjx-container mjx-mtable a").click(function(e) { toggleLaw(e); e.preventDefault(); })
+          );
         },
       error:
         function(jqXHR,textStatus,errorThrown) {
@@ -135,13 +137,13 @@ input[type=button], input[type=submit] {
         }
     });
   }
-  function toggleLaw(element, event) {
-    console.log(element);
-    console.log(event);
-    var bdd = jQuery(element).parent().parent().parent().parent().parent().parent().parent().parent().parent().children(".lawbdd");
-    console.log(bdd);
-    bdd.style.display = (bdd.style.display === 'none') ? 'block' : 'none';
-}
+  function toggleLaw(event) {
+    var mjx = jQuery(event.currentTarget).parent().parent().parent().parent().parent().parent().parent().parent();
+    // console.log(mjx)
+    var bdd = mjx.parent().next('.lawbdd');
+    // console.log(bdd)
+    bdd.fadeToggle();
+  }
   $(document).keydown(function(e) {
     if(e.ctrlKey && e.key == "s") {
       $("#runbutton").click();

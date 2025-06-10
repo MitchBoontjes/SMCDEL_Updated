@@ -228,13 +228,13 @@ showStructure uniqueID (KnS props lawbdd obs) = do
   case s of
     Nothing -> error $ "Error generating SVG "
     Just svgString -> do
-      return $ "$$ \\mathcal{F} = \\left( \n"
+      return $ "<div>$$ \\mathcal{F} = \\left( \n"
         ++ tex props ++ ", "
-        ++ " \\begin{array}{l} {"++ " \\href{javascript:toggleLaw(this, event)}{\\theta} " ++"} \\end{array}\n "
+        ++ " \\begin{array}{l} {"++ " \\href{javascript:void(0);}{\\theta} " ++"} \\end{array}\n "
         ++ ", \\begin{array}{l}\n"
         ++ intercalate " \\\\\n " (map (\(i,os) -> "O_{"++i++"}=" ++ tex os) obs)
         ++ "\\end{array}\n"
-        ++ " \\right) $$ \n <div class='lawbdd' id='lawbdd" ++ show uniqueID ++ "' style='display:none;'> where \\(\\theta\\) is this BDD:<br /><p align='center'>" ++ svgString ++ "</p></div>"
+        ++ " \\right) $$ \n <div class='lawbdd' id='lawbdd" ++ show uniqueID ++ "' style='display:none;'> where \\(\\theta\\) is this BDD:<br /><p align='center'>" ++ svgString ++ "</p></div></div>"
 
 -- 11. EMBEDDED FILES
 embeddedFile :: String -> T.Text
