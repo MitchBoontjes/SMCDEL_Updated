@@ -1,7 +1,7 @@
 module Main where
 
 import Control.Arrow (second)
-import Control.Monad (when,unless)
+import Control.Monad (when,unless, foldM)
 import Data.List (intercalate)
 import Data.Version (showVersion)
 import Paths_smcdel (version)
@@ -38,7 +38,7 @@ main = do
         when texMode $
           hPutStrLn outHandle $ unlines
             [ "\\section{Given Knowledge Structure}", "\\[ (\\mathcal{F},s) = (" ++ tex ((mykns,[])::KnowScene) ++ ") \\]", "\n\n\\section{Results}" ]
-        mapM_ (doJob outHandle texMode mykns) jobs
+        _ <- processJobs outHandle texMode mykns jobs
         when texMode $ hPutStrLn outHandle texEnd
         when showMode $ do
           hClose outHandle
@@ -48,23 +48,50 @@ main = do
           return ()
         putStrLn "\nDoei!"
 
-doJob :: Handle -> Bool -> KnowStruct -> Job -> IO ()
+-- 1. doJob: Process each job
+processJobs :: Handle -> Bool -> KnowStruct -> [Job] -> IO KnowStruct
+processJobs outHandle texMode = foldM (doJob outHandle texMode)
+
+doJob :: Handle -> Bool -> KnowStruct -> Job -> IO KnowStruct
+-- TrueQ s f
 doJob outHandle texMode mykns (TrueQ s f) = do
   hPutStrLn outHandle $ "Is " ++ (if texMode then "$" ++ texForm (simplify f) ++ "$" else ppForm f) ++ " true at " ++ (if texMode then "$" ++ tex (map P s) ++ "$" else show s) ++ "?"
   (if texMode then hPutStrLn outHandle else vividPutStrLn) (show (evalViaBdd (mykns, map P s) f) ++ "\n" ++ ['\n' | texMode])
+  return mykns
+  
+-- ValidQ f
 doJob outHandle texMode mykns (ValidQ f) = do
   hPutStrLn outHandle $ "Is " ++ (if texMode then "$" ++ texForm (simplify f) ++ "$" else ppForm f) ++ " valid on "++ (if texMode then "$\\mathcal{F}$" else "F") ++ "?"
   (if texMode then hPutStrLn outHandle else vividPutStrLn) (show (validViaBdd mykns f) ++ "\n" ++ ['\n' | texMode])
+  return mykns
+
+-- WhereQ f (true)
 doJob outHandle True mykns (WhereQ f) = do
   hPutStrLn outHandle $ "At which states is $" ++ texForm (simplify f) ++ "$ true? $"
   let states = map tex (whereViaBdd mykns f)
   hPutStrLn outHandle $ intercalate "," states
   hPutStrLn outHandle "$\n"
+  return mykns
+
+-- WhereQ f (not true)
 doJob outHandle False mykns (WhereQ f) = do
   hPutStrLn outHandle $ "At which states is " ++ ppForm f ++ " true?"
   mapM_ (vividPutStrLn.show.map(\(P n) -> n)) (whereViaBdd mykns f)
   putStr "\n"
--- doJob update
+  return mykns
+
+-- UpdateQ f
+doJob outHandle texMode mykns (UpdateQ f) = do
+  let updatedKns = update mykns f
+  let phiTex = texForm (simplify f)
+  let fPhi = if texMode then "\\( \\mathcal{F}^{(" ++ phiTex ++ ")} \\)" else "(F^(" ++ phiTex ++ "))"
+  hPutStrLn outHandle $ unlines
+    [ "Updating the model with the new announcement " ++ (if texMode then "$" ++ phiTex ++ "$" else ppForm f) ++ ","
+    , "the resulting structure is represented as: " ++ fPhi
+    ]
+  return updatedKns
+
+
 
 getInputAndSettings :: IO (String,[String])
 getInputAndSettings = do

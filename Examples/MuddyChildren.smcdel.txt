@@ -38,4 +38,10 @@ VALID?
   (1 & 2 & 3)
 
 UPDATE!
-  (1|2|3)
+  (1)
+
+VALID?
+  2
+
+VALID?
+  1
