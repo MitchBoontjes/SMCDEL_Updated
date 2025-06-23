@@ -37,11 +37,30 @@ VALID?
       & (~ (carol knows whether 3)) ) ]
   (1 & 2 & 3)
 
+ -- No rules yet, alice never knows whether she is muddy
+WHERE? 
+    alice knows that 1
+
+-- Father's announcement: at least one of you is muddy
 UPDATE!
-  (1)
+    OR (1, 2, 3)
+   
+-- If bob and carol are not muddy, alice knows she is muddy 
+WHERE?
+    (alice knows that 1)
 
-VALID?
-  2
+-- Second announcement: 'does anybody know whether they are muddy?' nobody steps forward
+UPDATE!
+    AND (~ alice knows whether 1, ~ bob knows whether 2, ~ carol knows whether 3) 
 
+-- Resulting possible worlds shrink to 4
+WHERE?
+    Top
+
+-- alice and bob see carol with a clean forehead
+UPDATE!
+    AND (alice knows whether 1, bob knows whether 2) 
+
+-- carol now knows she has a clean forehead
 VALID?
-  1
+    carol knows whether 3
