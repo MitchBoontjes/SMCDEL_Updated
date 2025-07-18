@@ -139,9 +139,7 @@ input[type=button], input[type=submit] {
   }
   function toggleLaw(event) {
     var mjx = jQuery(event.currentTarget).parent().parent().parent().parent().parent().parent().parent().parent();
-    // console.log(mjx)
     var bdd = mjx.parent().next('.lawbdd');
-    // console.log(bdd)
     bdd.fadeToggle();
   }
   $(document).keydown(function(e) {

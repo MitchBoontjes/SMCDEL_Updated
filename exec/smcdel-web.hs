@@ -180,7 +180,6 @@ doJobWeb mykns (UpdateQ f) = do
       ["After updating the model with the new announcement \\(" ++ phiTex ++ "\\),"
       , "the resulting structure is: " ++ fPhi ++ "<br />"
       , updatedStruct
-      , "<p> Updated formula:</p> \\(" ++ phiTex ++ "\\)"
       ], updatedKns)
 
 
@@ -197,7 +196,7 @@ showStructure (KnS props lawbdd obs) = do
         ++ ", \\begin{array}{l}\n"
         ++ intercalate " \\\\\n " (map (\(i,os) -> "O_{"++i++"}=" ++ tex os) obs)
         ++ "\\end{array}\n"
-        ++ " \\right) $$ \n <div class='lawbdd' id='lawbdd ' style='display:none;'> where \\(\\theta\\) is this BDD:<br /><p align='center'>" ++ svgString ++ "</p></div></div>"
+        ++ " \\right) $$ \n <div class='lawbdd' style='display:none;'> where \\(\\theta\\) is this BDD:<br /><p align='center'>" ++ svgString ++ "</p></div></div>"
 
 -- 11. EMBEDDED FILES
 embeddedFile :: String -> T.Text
