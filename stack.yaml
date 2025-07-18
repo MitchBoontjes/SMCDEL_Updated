@@ -7,5 +7,5 @@ extra-deps:
 - git: https://github.com/m4lvin/cudd.git
   commit: c5f0fd8446827b1473ef18ea5dcc5d32a256e57d
 - git: https://github.com/MitchBoontjes/HasCacBDD.git
-  commit: c11051d3489ccd88545e6cbb69f8e3c174a985ce
+  commit: 72028fe1996dbec93aff0bf05f28552f48d48df5
 - decision-diagrams-0.2.0.0
